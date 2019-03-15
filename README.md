@@ -13,6 +13,19 @@ the result you want. With `curb` on the other hand:
 $ curb --no-smt --no-numa mycommand
 ```
 
+You can also limit the number of cores using something like:
+
+```console
+$ curb --no-smt -n 3 mycommand
+```
+
+By default, curb picks cores, nodes, and anything else in a
+deterministic fashion (usually tending towards 0). If you want to pick
+randomly instead, use `--randomize` (or `-r`).
+
+
+### Passing arguments
+
 Will run `mycommand` _only_ on each physical core on a single NUMA node
 (the first one specifically). Note that if you want to pass additional
 arguments to the command under test, you can do so using `--`:
@@ -20,6 +33,8 @@ arguments to the command under test, you can do so using `--`:
 ```console
 $ curb --no-smt mycommand -- --no-crash --performance better
 ```
+
+### Visualizing the core allocation
 
 To visualize what CPUs are being used using [`lstopo`], do:
 
