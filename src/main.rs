@@ -1,3 +1,5 @@
+use rand::seq::SliceRandom;
+use rand::Rng;
 use std::io;
 use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
@@ -23,6 +25,10 @@ struct Opt {
     #[structopt(short = "n", long = "ncores")]
     ncores: Option<usize>,
 
+    /// Randomize all selections (like choice of HT, NUMA node, or cores).
+    #[structopt(short = "r", long = "randomize")]
+    randomize: bool,
+
     /// The command to run.
     #[structopt(parse(from_os_str))]
     command: PathBuf,
@@ -45,23 +51,29 @@ fn main() {
     let flags = hwloc::CPUBIND_PROCESS | hwloc::CPUBIND_STRICT;
     let mut topo = hwloc::Topology::new();
     let mut allowed = topo.get_cpubind(flags).unwrap();
+    let mut rng = rand::thread_rng();
 
     if opt.disable_smt {
         // clear bits for all but the first PU on each core
-        for pu in topo.objects_with_type(&hwloc::ObjectType::PU).unwrap() {
+        for core in topo.objects_with_type(&hwloc::ObjectType::Core).unwrap() {
             if opt.verbose {
-                eprintln!(
-                    "found PU#{} (sibling #{})",
-                    pu.os_index(),
-                    pu.sibling_rank()
-                );
+                eprintln!("found core #{}", core.logical_index());
             }
 
-            if pu.parent().unwrap().object_type() == hwloc::ObjectType::Core
-                && pu.sibling_rank() != 0
-            {
+            let mut pus = core.children();
+            pus.retain(|pu| pu.object_type() == hwloc::ObjectType::PU);
+            let select = if opt.randomize {
+                rng.gen_range(0, pus.len())
+            } else {
+                0
+            };
+
+            for (i, pu) in pus.into_iter().enumerate() {
+                if i == select {
+                    continue;
+                }
                 if opt.verbose {
-                    eprintln!("disabling SMT PU");
+                    eprintln!("disabling SMT PU#{}", pu.os_index());
                 }
                 allowed.unset(pu.os_index());
             }
@@ -69,12 +81,14 @@ fn main() {
     }
 
     if opt.disable_numa {
-        for numa in topo
+        let mut numas = topo
             .objects_with_type(&hwloc::ObjectType::NUMANode)
-            .unwrap()
-            .into_iter()
-            .skip(1)
-        {
+            .unwrap();
+        if opt.randomize {
+            numas.shuffle(&mut rng);
+        }
+
+        for numa in numas.into_iter().skip(1) {
             if opt.verbose {
                 eprintln!("found extra NUMA node #{}", numa.sibling_rank());
             }
@@ -89,7 +103,12 @@ fn main() {
     }
 
     if let Some(ncores) = opt.ncores {
-        for n in allowed.clone().into_iter().skip(ncores) {
+        let mut all: Vec<_> = allowed.clone().into_iter().collect();
+        if opt.randomize {
+            all.shuffle(&mut rng);
+        }
+
+        for n in all.into_iter().skip(ncores) {
             allowed.unset(n);
         }
     }
