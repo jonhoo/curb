@@ -1,0 +1,53 @@
+language: rust
+cache: cargo
+rust:
+  - stable
+  - beta
+  - nightly
+os: linux
+script:
+  - cargo check
+
+# always test things that aren't pushes (like PRs)
+# never test tags or pushes to non-master branches (wait for PR)
+# https://github.com/travis-ci/travis-ci/issues/2200#issuecomment-441395545)
+if: type != push OR (tag IS blank AND branch = master)
+
+jobs:
+  allow_failures:
+    - rust: nightly
+  include:
+    - stage: test
+      rust: 1.31.1 # also test oldest known-good stable
+    - rust: stable
+      os: osx # also test on macOS
+#    - rust: stable
+#      os: windows
+    - stage: lint # we lint on beta to future-proof
+      name: "Rust: beta, rustfmt"
+      rust: beta
+      os: linux
+      script:
+        - rustup component add rustfmt-preview
+        - cargo fmt -v -- --check
+    - name: "Rust: nightly, rustfmt" # and on nightly with allow_fail
+      rust: nightly
+      os: linux
+      script:
+        - rustup component add rustfmt-preview
+        - cargo fmt -v -- --check
+    - name: "Rust: beta, clippy"
+      rust: beta
+      os: linux
+      script:
+        - rustup component add clippy-preview
+        - touch ./src/lib.rs && cargo clippy -- -D warnings
+    - name: "Rust: nightly, clippy"
+      rust: nightly
+      os: linux
+      script:
+        - rustup component add clippy-preview
+        - touch ./src/lib.rs && cargo clippy -- -D warnings
+stages:
+ - test
+ - lint

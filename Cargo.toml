@@ -1,6 +1,6 @@
 [package]
 name = "curb"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
 edition = "2018"
 license = "MIT"
@@ -10,6 +10,7 @@ description = "Run a process on a particular subset of the available hardware."
 categories = ["command-line-utilities", "hardware-support"]
 
 [badges]
+travis-ci = { repository = "jonhoo/curb" }
 maintenance = { status = "experimental" }
 
 [dependencies]
