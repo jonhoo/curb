@@ -1,5 +1,5 @@
-[![Crates.io](https://img.shields.io/crates/v/async-lease.svg)](https://crates.io/crates/async-lease)
-[![Build Status](https://travis-ci.com/jonhoo/async-lease.svg?branch=master)](https://travis-ci.com/jonhoo/async-lease)
+[![Crates.io](https://img.shields.io/crates/v/curb.svg)](https://crates.io/crates/curb)
+[![Build Status](https://travis-ci.com/jonhoo/curb.svg?branch=master)](https://travis-ci.com/jonhoo/curb)
 
 A command-line tool to restrict a process from using particular hardware
 resources. It is particularly geared towards performance-sensitive
