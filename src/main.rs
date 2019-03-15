@@ -19,6 +19,10 @@ struct Opt {
     #[structopt(long = "no-numa")]
     disable_numa: bool,
 
+    /// Run on at most this many cores.
+    #[structopt(short = "n", long = "ncores")]
+    ncores: Option<usize>,
+
     /// The command to run.
     #[structopt(parse(from_os_str))]
     command: PathBuf,
@@ -81,6 +85,12 @@ fn main() {
                 }
                 allowed.unset(cpu);
             }
+        }
+    }
+
+    if let Some(ncores) = opt.ncores {
+        for n in allowed.clone().into_iter().skip(ncores) {
+            allowed.unset(n);
         }
     }
 
