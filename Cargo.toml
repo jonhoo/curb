@@ -1,0 +1,17 @@
+[package]
+name = "curb"
+version = "0.1.0"
+authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
+edition = "2018"
+license = "MIT"
+homepage = "https://github.com/jonhoo/curb"
+repository = "https://github.com/jonhoo/curb"
+description = "Run a process on a particular subset of the available hardware."
+categories = ["command-line-utilities", "hardware-support"]
+
+[badges]
+maintenance = { status = "experimental" }
+
+[dependencies]
+hwloc = "0.5"
+structopt = "0.2"
