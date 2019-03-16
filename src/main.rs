@@ -29,6 +29,10 @@ struct Opt {
     #[structopt(short = "r", long = "randomize")]
     randomize: bool,
 
+    /// Minimize the number of physical packages used by selecting all cores on each package.
+    #[structopt(long = "group-cores")]
+    group_cores: bool,
+
     /// The command to run.
     #[structopt(parse(from_os_str))]
     command: PathBuf,
@@ -103,13 +107,58 @@ fn main() {
     }
 
     if let Some(ncores) = opt.ncores {
-        let mut all: Vec<_> = allowed.clone().into_iter().collect();
-        if opt.randomize {
-            all.shuffle(&mut rng);
-        }
+        if opt.group_cores {
+            // we want to pick cores, but we want to make sure we use as few packages as possible
+            // to minimize cross-package traffic. to do that, we basically have to pick _packages_
+            // first (possibly randomly), then iteratively pick cores from that package until we
+            // have as many as we want. With randomize, we also have to pick cores randomly from
+            // the last of those packages.
+            let mut packages = topo.objects_with_type(&hwloc::ObjectType::Package).unwrap();
+            if opt.randomize {
+                packages.shuffle(&mut rng);
+            }
 
-        for n in all.into_iter().skip(ncores) {
-            allowed.unset(n);
+            let mut n = 0;
+            for package in packages {
+                let mut candidate_cores: Vec<_> = package
+                    .cpuset()
+                    .unwrap()
+                    .into_iter()
+                    .filter(|&c| allowed.is_set(c))
+                    .collect();
+
+                if n == ncores {
+                    // we've already added all the cores we need, so disable any additional ones.
+                    for core in candidate_cores {
+                        allowed.unset(core);
+                    }
+                    continue;
+                }
+
+                if n + candidate_cores.len() > ncores {
+                    // this package gives us more cores than we're going to allow,
+                    // so we need to pick only a subset and disable the rest.
+                    if opt.randomize {
+                        candidate_cores.shuffle(&mut rng);
+                    }
+                    for core in candidate_cores.into_iter().skip(ncores - n) {
+                        allowed.unset(core);
+                    }
+                    n = ncores;
+                } else {
+                    // we want all the cores from this package, so don't disable any of them.
+                    n += candidate_cores.len();
+                }
+            }
+        } else {
+            let mut all: Vec<_> = allowed.clone().into_iter().collect();
+            if opt.randomize {
+                all.shuffle(&mut rng);
+            }
+
+            for n in all.into_iter().skip(ncores) {
+                allowed.unset(n);
+            }
         }
     }
 
