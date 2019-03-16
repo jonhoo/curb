@@ -44,10 +44,9 @@ struct Opt {
     arguments: Vec<String>,
 }
 
+#[allow(clippy::cyclomatic_complexity)]
 fn main() {
     let opt = Opt::from_args();
-    println!("{:?}", opt);
-
     let mut cmd = Command::new(&opt.command);
     cmd.args(&opt.arguments);
 
