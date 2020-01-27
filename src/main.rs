@@ -7,7 +7,7 @@ use std::process::{exit, Command};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = "")]
+#[structopt()]
 struct Opt {
     /// Enable verbose debug output.
     #[structopt(short = "v", long = "verbose")]

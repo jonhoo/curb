@@ -1,6 +1,6 @@
 [package]
 name = "curb"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
 edition = "2018"
 license = "MIT"
@@ -15,5 +15,5 @@ maintenance = { status = "experimental" }
 
 [dependencies]
 hwloc = "0.5"
-structopt = "0.2"
-rand = "0.6"
+structopt = "0.3"
+rand = "0.7"
